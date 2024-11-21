@@ -75,6 +75,19 @@
     - not kubelet_conf.stat.exists
     - kubeadm_use_file_discovery
 
+- name: nginx proxy | start with containerd
+  command: >-
+    ctr --namespace=k8s.io run
+    --net-host
+    --snapshotter=zfs
+    -d
+    --mount type=bind,src={{ nginx_config_dir }},dst=/etc/nginx,options=rbind:ro
+    {{ nginx_image_repo }}:{{ nginx_image_tag }}
+    nginx
+  when:
+    - not kubelet_conf.stat.exists
+    - container_manager == 'containerd'
+
 - name: Create kubeadm client config
   template:
     src: "kubeadm-client.conf.{{ kubeadmConfig_api_version }}.j2"
@@ -220,3 +233,18 @@
     - inventory_hostname not in groups['kube_control_plane']
     - kube_network_plugin in ["calico", "flannel", "cilium"] or cilium_deploy_additionally | default(false) | bool
     - kube_network_plugin != "calico" or calico_datastore == "etcd"
+
+# Cleanup the nginx proxy that we created earlier on to bootstrap kubelet, so that it can start
+- name: nginx proxy | stop container
+  command: ctr --namespace=k8s.io task delete -f nginx
+  when:
+    - not kubelet_conf.stat.exists
+    - container_manager == 'containerd'
+  ignore_errors: yes
+
+- name: nginx proxy | delete container
+  command: ctr --namespace=k8s.io container rm nginx
+  when:
+    - not kubelet_conf.stat.exists
+    - container_manager == 'containerd'
+  ignore_errors: yes
