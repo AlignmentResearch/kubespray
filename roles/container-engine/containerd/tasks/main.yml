@@ -113,6 +113,13 @@
     owner: "root"
     mode: "0640"
   notify: Restart containerd
+  vars:
+    ansible_stat: "{{ lookup('ansible.builtin.stat', containerd_cfg_dir + '/config.toml') }}"
+  when:
+    # Don't run during simulation/dry-run mode
+    - not ansible_check_mode
+    # AND either the config file is missing OR this host is marked for forced updates
+    - not ansible_stat.stat.exists or inventory_hostname in force_write_containerd_config
 
 - name: Containerd | Configure containerd registries
   block:
