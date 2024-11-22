@@ -106,6 +106,12 @@
   with_dict: "{{ containerd_base_runtime_specs | default({}) }}"
   notify: Restart containerd
 
+# IAN: This is Claude's attempted fix
+- name: Containerd | Check if config file exists
+  stat:
+    path: "{{ containerd_cfg_dir }}/config.toml"
+  register: config_stat
+
 - name: Containerd | Copy containerd config file
   template:
     src: config.toml.j2
@@ -113,13 +119,11 @@
     owner: "root"
     mode: 0640
   notify: Restart containerd
-  vars:
-    ansible_stat: "{{ lookup('ansible.builtin.stat', containerd_cfg_dir + '/config.toml') }}"
   when:
     # Don't run during simulation/dry-run mode
     - not ansible_check_mode
     # AND either the config file is missing OR this host is marked for forced updates
-    - not ansible_stat.stat.exists or inventory_hostname in force_write_containerd_config
+    - not config_stat.stat.exists or inventory_hostname in force_write_containerd_config
 
 - name: Containerd | Configure containerd registries
   when: containerd_registries_mirrors is defined
