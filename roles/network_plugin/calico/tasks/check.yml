@@ -56,7 +56,7 @@
   run_once: True
   ignore_errors: True
   retries: 5
-  delay: 10
+  delay: 1
   until: calico_ready.rc == 0
   delegate_to: "{{ groups['kube_control_plane'][0] }}"
   when: calicoctl_sh_exists.stat.exists
