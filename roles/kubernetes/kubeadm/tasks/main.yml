@@ -78,6 +78,7 @@
   command: >-
     ctr --namespace=k8s.io run
     --net-host
+    --snapshotter={{ containerd_snapshotter }}
     -d
     --mount type=bind,src={{ nginx_config_dir }},dst=/etc/nginx,options=rbind:ro
     {{ nginx_image_repo }}:{{ nginx_image_tag }}
