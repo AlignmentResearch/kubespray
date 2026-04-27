@@ -1,5 +1,7 @@
 version = 3
 
+imports = ["/etc/containerd/conf.d/*.toml"]
+
 root = "{{ containerd_storage_dir }}"
 state = "{{ containerd_state_dir }}"
 oom_score = {{ containerd_oom_score }}
@@ -87,6 +89,12 @@ oom_score = {{ containerd_oom_score }}
 
   [plugins."io.containerd.nri.v1.nri"]
     disable = {{ 'false' if nri_enabled else 'true' }}
+
+  [plugins."io.containerd.transfer.v1.local"]
+    [[plugins."io.containerd.transfer.v1.local".unpack_config]]
+      differ = ""
+      platform = "linux/amd64"
+      snapshotter = "{{ containerd_snapshotter }}"
 
 {% if containerd_tracing_enabled %}
   [plugins."io.containerd.tracing.processor.v1.otlp"]
